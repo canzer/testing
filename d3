@@ -34,8 +34,8 @@
 
         // Create force simulation
         var simulation = d3.forceSimulation(nodes)
-            .force("link", d3.forceLink(links).id(function(d) { return d.index; }))
-            .force("charge", d3.forceManyBody())
+            .force("link", d3.forceLink(links).id(function(d) { return d.index; }).distance(150))
+            .force("charge", d3.forceManyBody().strength(-100))
             .force("center", d3.forceCenter(300, 200));
 
         // Create links
