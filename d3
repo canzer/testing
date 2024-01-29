@@ -16,16 +16,52 @@
     <!-- Your JavaScript code to create the graph -->
     <script>
         // Sample data
-        var data = [{"inbound_server": { "name": "Server1"}, "outbound_server": { "name": "Server2"}}];
+        var data = [
+            {
+                "inbound_server": { "name": "Server1" },
+                "outbound_servers": [
+                    { "name": "Server2" },
+                    { "name": "Server3" },
+                    { "name": "Server4" }
+                ]
+            },
+            {
+                "inbound_server": { "name": "Server4" },
+                "outbound_servers": [
+                    { "name": "Server5" },
+                    { "name": "Server6" },
+                    { "name": "Server2" }
+                ]
+            }
+        ];
 
-        // Extract unique nodes
-        var nodes = [...new Set(data.flatMap(d => [d.inbound_server, d.outbound_server]))];
+        // Extract unique nodes based on server names
+        var nodesSet = new Set();
+        data.forEach(function(d) {
+            nodesSet.add(d.inbound_server.name);
+            d.outbound_servers.forEach(function(outbound) {
+                nodesSet.add(outbound.name);
+            });
+        });
+
+        var nodes = Array.from(nodesSet, function(name) {
+            return { name: name };
+        });
 
         // Create links array
-        var links = data.map(d => ({
-            source: nodes.indexOf(d.inbound_server),
-            target: nodes.indexOf(d.outbound_server)
-        }));
+        var links = data.flatMap(d => d.outbound_servers.map(outbound => ({
+            source: nodes.find(node => node.name === d.inbound_server.name),
+            target: nodes.find(node => node.name === outbound.name),
+            label: "outbound"
+        })));
+
+        // Calculate initial positions based on a pyramid layout
+        var numNodes = nodes.length;
+        var pyramidWidth = 200;
+        nodes.forEach(function(node, index) {
+            node.x = pyramidWidth * (index % 2) + (index % 2 === 0 ? 0 : pyramidWidth);
+            node.y = 100 + 100 * Math.floor(index / 2);
+        });
 
         // Create SVG container
         var svg = d3.select("#forceGraph")
@@ -45,6 +81,14 @@
             .enter().append("line")
             .attr("stroke", "black");
 
+        // Create labels for links
+        var linkLabel = svg.append("g")
+            .selectAll("text")
+            .data(links)
+            .enter().append("text")
+            .text(function(d) { return d.label; })
+            .attr("text-anchor", "middle");
+
         // Create nodes
         var node = svg.append("g")
             .selectAll("circle")
@@ -53,7 +97,7 @@
             .attr("r", 20)
             .attr("fill", "blue");
 
-        // Create labels
+        // Create labels for nodes
         var label = svg.append("g")
             .selectAll("text")
             .data(nodes)
@@ -69,6 +113,10 @@
                 .attr("y1", function(d) { return d.source.y; })
                 .attr("x2", function(d) { return d.target.x; })
                 .attr("y2", function(d) { return d.target.y; });
+
+            linkLabel
+                .attr("x", function(d) { return (d.source.x + d.target.x) / 2; })
+                .attr("y", function(d) { return (d.source.y + d.target.y) / 2; });
 
             node
                 .attr("cx", function(d) { return d.x; })
