@@ -3,84 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Replication Graph</title>
+    <title>D3.js Force-Directed Graph</title>
+
+    <!-- Include D3.js from a CDN -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
-    <div id="graph-container"></div>
 
+    <!-- Container for the graph -->
+    <svg id="forceGraph" width="600" height="400"></svg>
+
+    <!-- Your JavaScript code to create the graph -->
     <script>
-        // Assume you have the JSON data available in a variable named 'replicationData'
-        var replicationData = [
-            {
-                "inbound_server": {"name": "Server1", "ip": "192.168.1.1"},
-                "outbound_server": {"name": "Server2", "ip": "192.168.1.2"}
-            },
-            // ... (other data entries)
-        ];
+        // Sample data
+        var data = [{"inbound_server": { "name": "Server1"}, "outbound_server": { "name": "Server2"}}];
 
-        console.log('replicationData:', replicationData);
+        // Extract unique nodes
+        var nodes = [...new Set(data.flatMap(d => [d.inbound_server, d.outbound_server]))];
 
-        var width = 800;
-        var height = 600;
+        // Create links array
+        var links = data.map(d => ({
+            source: nodes.indexOf(d.inbound_server),
+            target: nodes.indexOf(d.outbound_server)
+        }));
 
-        var svg = d3.select("#graph-container")
-            .append("svg")
-            .attr("width", width)
-            .attr("height", height);
+        // Create SVG container
+        var svg = d3.select("#forceGraph")
+            .attr("width", 600)
+            .attr("height", 400);
+
+        // Create force simulation
+        var simulation = d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links).id(function(d) { return d.index; }))
+            .force("charge", d3.forceManyBody())
+            .force("center", d3.forceCenter(300, 200));
 
         // Create links
-        var link = svg.selectAll("line")
-            .data(replicationData)
+        var link = svg.append("g")
+            .selectAll("line")
+            .data(links)
             .enter().append("line")
-            .attr("stroke", "#999")
-            .attr("stroke-width", "1");
+            .attr("stroke", "black");
 
-        // Create inbound server circles
-        var inboundNode = svg.selectAll(".inbound-node")
-            .data(replicationData)
+        // Create nodes
+        var node = svg.append("g")
+            .selectAll("circle")
+            .data(nodes)
             .enter().append("circle")
-            .attr("class", "inbound-node")
-            .attr("r", 10)
-            .attr("fill", "steelblue");
+            .attr("r", 20)
+            .attr("fill", "blue");
 
-        // Create outbound server circles
-        var outboundNode = svg.selectAll(".outbound-node")
-            .data(replicationData)
-            .enter().append("circle")
-            .attr("class", "outbound-node")
-            .attr("r", 10)
-            .attr("fill", "orange");
+        // Create labels
+        var label = svg.append("g")
+            .selectAll("text")
+            .data(nodes)
+            .enter().append("text")
+            .text(function(d) { return d.name; })
+            .attr("dy", 5)
+            .attr("text-anchor", "middle");
 
-        // Set up force simulation
-        var simulation = d3.forceSimulation(replicationData)
-            .force("link", d3.forceLink().id(d => d.inbound_server.name))
-            .force("charge", d3.forceManyBody().strength(-200))
-            .force("center", d3.forceCenter(width / 2, height / 2));
-
-        simulation
-            .nodes(replicationData)
-            .on("tick", ticked);
-
-        simulation.force("link")
-            .links(replicationData);
-
-        function ticked() {
+        // Update positions on tick
+        simulation.on("tick", function() {
             link
-                .attr("x1", d => (d.inbound_server && d.inbound_server.x) || 0)
-                .attr("y1", d => (d.inbound_server && d.inbound_server.y) || 0)
-                .attr("x2", d => (d.outbound_server && d.outbound_server.x) || 0)
-                .attr("y2", d => (d.outbound_server && d.outbound_server.y) || 0);
+                .attr("x1", function(d) { return d.source.x; })
+                .attr("y1", function(d) { return d.source.y; })
+                .attr("x2", function(d) { return d.target.x; })
+                .attr("y2", function(d) { return d.target.y; });
 
-            inboundNode
-                .attr("cx", d => (d.inbound_server && d.inbound_server.x) || 0)
-                .attr("cy", d => (d.inbound_server && d.inbound_server.y) || 0);
+            node
+                .attr("cx", function(d) { return d.x; })
+                .attr("cy", function(d) { return d.y; });
 
-            outboundNode
-                .attr("cx", d => (d.outbound_server && d.outbound_server.x) || 0)
-                .attr("cy", d => (d.outbound_server && d.outbound_server.y) || 0);
-        }
+            label
+                .attr("x", function(d) { return d.x; })
+                .attr("y", function(d) { return d.y; });
+        });
     </script>
 </body>
 </html>
-
