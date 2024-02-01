@@ -11,31 +11,33 @@
 <body>
 
     <!-- Container for the graph -->
-    <svg id="forceGraph" width="600" height="400"></svg>
+    <svg id="forceGraph" width="1600" height="1400"></svg>
 
     <!-- Your JavaScript code to create the graph -->
     <script>
-        // Sample data
+        // Sample data for multi-domain environment with FQDNs
         var data = [
             {
-                "inbound_server": { "name": "Server1" },
+                "inbound_server": { "name": "test.domain.com" },
                 "outbound_servers": [
-                    { "name": "Server2" },
-                    { "name": "Server3" },
-                    { "name": "Server4" }
+                    { "name": "server1.domain.com" },
+                    { "name": "server2.domain.com" },
+                    { "name": "server3.domain.com" }
                 ]
             },
             {
-                "inbound_server": { "name": "Server4" },
+                "inbound_server": { "name": "corey.local.com" },
                 "outbound_servers": [
-                    { "name": "Server5" },
-                    { "name": "Server6" },
-                    { "name": "Server2" }
+                    { "name": "server4.local.com" },
+                    { "name": "server5.local.com" },
+                    { "name": "server6.local.com" },
+                    { "name": "server3.domain.com" }
                 ]
             }
+            // Add more domains and servers as needed
         ];
 
-        // Extract unique nodes based on server names
+        // Extract unique nodes based on server names and domains
         var nodesSet = new Set();
         data.forEach(function(d) {
             nodesSet.add(d.inbound_server.name);
@@ -45,34 +47,28 @@
         });
 
         var nodes = Array.from(nodesSet, function(name) {
-            return { name: name };
+            // Extract domain information from the FQDN
+            var domain = name.split('.').slice(1).join('.'); // Assuming the domain is the second part of the FQDN
+            return { name: name, domain: domain };
         });
 
         // Create links array
         var links = data.flatMap(d => d.outbound_servers.map(outbound => ({
             source: nodes.find(node => node.name === d.inbound_server.name),
             target: nodes.find(node => node.name === outbound.name),
-            label: "outbound"
+            label: ""
         })));
-
-        // Calculate initial positions based on a pyramid layout
-        var numNodes = nodes.length;
-        var pyramidWidth = 200;
-        nodes.forEach(function(node, index) {
-            node.x = pyramidWidth * (index % 2) + (index % 2 === 0 ? 0 : pyramidWidth);
-            node.y = 100 + 100 * Math.floor(index / 2);
-        });
 
         // Create SVG container
         var svg = d3.select("#forceGraph")
-            .attr("width", 600)
-            .attr("height", 400);
+            .attr("width", 1600)
+            .attr("height", 1400);
 
         // Create force simulation
         var simulation = d3.forceSimulation(nodes)
             .force("link", d3.forceLink(links).id(function(d) { return d.index; }).distance(150))
-            .force("charge", d3.forceManyBody().strength(-100))
-            .force("center", d3.forceCenter(300, 200));
+            .force("charge", d3.forceManyBody().strength(-300))
+            .force("center", d3.forceCenter(700, 600));
 
         // Create links
         var link = svg.append("g")
@@ -81,15 +77,16 @@
             .enter().append("line")
             .attr("stroke", "black");
 
-        // Create labels for links
-        var linkLabel = svg.append("g")
-            .selectAll("text")
-            .data(links)
-            .enter().append("text")
-            .text(function(d) { return d.label; })
-            .attr("text-anchor", "middle");
+        // Create rectangles for domains
+        var domainBox = svg.append("g")
+            .selectAll("rect")
+            .data(Array.from(new Set(nodes.map(node => node.domain))))
+            .enter().append("rect")
+            .attr("fill", "none")
+            .attr("stroke", "black")
+            .attr("stroke-width", 1);
 
-        // Create triangles
+        // Create triangles for servers
         var triangle = svg.append("g")
             .selectAll("polygon")
             .data(nodes)
@@ -108,8 +105,34 @@
             .data(nodes)
             .enter().append("text")
             .text(function(d) { return d.name; })
-            .attr("dy", -5)
-            .attr("text-anchor", "middle");
+            .attr("x", function(d) { return d.x; })
+            .attr("y", function(d) { return d.y - 25; })  // Adjust the y-coordinate to position the label above the node
+            .attr("text-anchor", "middle")
+            .attr("alignment-baseline", "middle")
+            .style("fill", "black")
+            .style("font-size", "12px")
+            .style("background-color", "black")
+            .style("padding", "5px")
+            .style("border", "1px solid white");
+
+        // Create labels for domains
+        var domainLabel = svg.append("g")
+            .selectAll("text")
+            .data(Array.from(new Set(nodes.map(node => node.domain))))
+            .enter().append("text")
+            .text(function(d) { return "Domain " + d; })
+            .attr("x", function(d) { return d3.mean(nodes.filter(node => node.domain === d), node => node.x); })
+            .attr("y", function(d) { return d3.min(nodes.filter(node => node.domain === d), node => node.y) - 15; })
+            .attr("text-anchor", "middle")
+            .attr("alignment-baseline", "middle")
+            .style("fill", "black")
+    .style("font-size", "12px")
+    .style("font-weight", "bold") // Add bold font-weight
+    .style("text-decoration", "underline") // Add underline
+    .style("text-transform", "capitalize"); // Capitalize the text;
+
+
+
 
         // Update positions on tick
         simulation.on("tick", function() {
@@ -119,9 +142,18 @@
                 .attr("x2", function(d) { return d.target.x; })
                 .attr("y2", function(d) { return d.target.y; });
 
-            linkLabel
-                .attr("x", function(d) { return (d.source.x + d.target.x) / 2; })
-                .attr("y", function(d) { return (d.source.y + d.target.y) / 2; });
+            // Update the position and size of domain boxes
+            domainBox
+                .attr("x", function(d) { return d3.min(nodes.filter(node => node.domain === d), node => node.x) - 10; })
+                .attr("y", function(d) { return d3.min(nodes.filter(node => node.domain === d), node => node.y) - 10; })
+                .attr("width", function(d) {
+                    return d3.max(nodes.filter(node => node.domain === d), node => node.x) -
+                           d3.min(nodes.filter(node => node.domain === d), node => node.x) + 20;
+                })
+                .attr("height", function(d) {
+                    return d3.max(nodes.filter(node => node.domain === d), node => node.y) -
+                           d3.min(nodes.filter(node => node.domain === d), node => node.y) + 20;
+                });
 
             triangle
                 .attr("points", function(d) {
@@ -133,7 +165,12 @@
 
             label
                 .attr("x", function(d) { return d.x; })
-                .attr("y", function(d) { return d.y; });
+                .attr("y", function(d) { return d.y - 25; });
+
+            // Update domain label positions
+            domainLabel
+                .attr("x", function(d) { return d3.mean(nodes.filter(node => node.domain === d), node => node.x); })
+                .attr("y", function(d) { return d3.min(nodes.filter(node => node.domain === d), node => node.y) - 15; });
         });
     </script>
 </body>
