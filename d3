@@ -126,12 +126,45 @@
             .attr("text-anchor", "middle")
             .attr("alignment-baseline", "middle")
             .style("fill", "black")
-    .style("font-size", "12px")
-    .style("font-weight", "bold") // Add bold font-weight
-    .style("text-decoration", "underline") // Add underline
-    .style("text-transform", "capitalize"); // Capitalize the text;
+            .style("font-size", "12px")
+            .style("font-weight", "bold") // Add bold font-weight
+            .style("text-decoration", "underline") // Add underline
+            .style("text-transform", "capitalize"); // Capitalize the text
 
+// Hover effect
+var hoverHighlight = function (event, d) {
+    // Reduce opacity for all elements
+    svg.selectAll("line, polygon, text").style("opacity", 0.2);
 
+    // Highlight current node
+    d3.select(this).style("opacity", 1);
+
+    // Highlight links and connected nodes
+    link.filter(link => link.source === d || link.target === d)
+        .style("opacity", 1);
+
+    // Extract connected nodes from links and highlight them
+    var connectedNodes = link.filter(link => link.source === d || link.target === d)
+        .data()
+        .flatMap(link => [link.source, link.target]);
+
+    triangle.filter(node => connectedNodes.includes(node))
+        .style("opacity", 1);
+
+    // Highlight labels for connected nodes
+    label.filter(label => connectedNodes.includes(label))
+        .style("opacity", 1);
+};
+
+// Remove hover effect
+var hoverEnd = function () {
+    // Restore opacity for all elements
+    svg.selectAll("line, polygon, text").style("opacity", 1);
+};
+
+// Apply hover effect to nodes
+triangle.on("mouseover", hoverHighlight).on("mouseout", hoverEnd);
+label.on("mouseover", hoverHighlight).on("mouseout", hoverEnd);
 
 
         // Update positions on tick
