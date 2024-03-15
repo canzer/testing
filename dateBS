@@ -19,10 +19,12 @@
                     {% endfor %}
                 </select>
             </div>
+            <!-- Add hidden input field to send selected date value -->
+            <input type="hidden" id="selected_date_hidden" name="selected_date_hidden">
             <button type="submit" class="btn btn-primary">Submit</button>
         </form>
         {% if users_data %}
-        <h2>Users Data for Selected Date</h2>
+        <h2>Users Data for Selected Date: {{ selected_date }}</h2>
         <table class="table">
             <thead>
                 <tr>
@@ -49,5 +51,12 @@
     </div>
     <!-- Bootstrap JS -->
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        // Set the value of hidden input field to selected date before form submission
+        document.getElementById('selected_date').addEventListener('change', function() {
+            document.getElementById('selected_date_hidden').value = this.value;
+        });
+    </script>
 </body>
 </html>
+
