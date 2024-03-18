@@ -3,60 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Select Date</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Event Statistics</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>Select Date</h1>
-        <form method="POST" action="/select_date">
-            <div class="form-group">
-                <label for="selected_date">Select Date:</label>
-                <select class="form-control" id="selected_date" name="selected_date">
-                    {% for date in dates %}
-                    <option>{{ date }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <!-- Add hidden input field to send selected date value -->
-            <input type="hidden" id="selected_date_hidden" name="selected_date_hidden">
-            <button type="submit" class="btn btn-primary">Submit</button>
-        </form>
-        {% if users_data %}
-        <h2>Users Data for Selected Date: {{ selected_date }}</h2>
+        <h1>Event Statistics</h1>
         <table class="table">
             <thead>
                 <tr>
-                    <th>Source</th>
-                    <th>Destination</th>
                     <th>User</th>
-                    <th>Event ID</th>
-                    <th>Time</th>
+                    <th>Events Count</th>
+                    <th>Unique Source IPs</th>
                 </tr>
             </thead>
             <tbody>
-                {% for user_data in users_data %}
+                {% for user, data in result.items() %}
                 <tr>
-                    <td>{{ user_data.source }}</td>
-                    <td>{{ user_data.destination }}</td>
-                    <td>{{ user_data.user }}</td>
-                    <td>{{ user_data.eventid }}</td>
-                    <td>{{ user_data.time }}</td>
+                    <td>{{ user }}</td>
+                    <td>{{ data['events_count'] }}</td>
+                    <td>
+                        <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapse{{ loop.index }}">Show IPs</button>
+                        <div class="collapse" id="collapse{{ loop.index }}">
+                            <ul class="list-group">
+                                {% for source in data['unique_sources'] %}
+                                    <li class="list-group-item">{{ source }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-        {% endif %}
     </div>
-    <!-- Bootstrap JS -->
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script>
-        // Set the value of hidden input field to selected date before form submission
-        document.getElementById('selected_date').addEventListener('change', function() {
-            document.getElementById('selected_date_hidden').value = this.value;
-        });
-    </script>
-</body>
-</html>
-
