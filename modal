@@ -1,9 +1,4 @@
-<!-- Button to trigger modal -->
-<button type="button" class="btn btn-primary" id="showInstalledKbsModal">
-    Show Installed KBs
-</button>
-
-<!-- Modal -->
+<!-- Hidden modal -->
 <div class="modal fade" id="installedKbsModal" tabindex="-1" role="dialog" aria-labelledby="installedKbsModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
